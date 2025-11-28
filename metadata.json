@@ -1,0 +1,7 @@
+{
+  "name": "Meowing Morning",
+  "description": "A personalized, cat-themed morning dashboard that delivers weather tips, daily quotes, and horoscopes with a warm, feline touch.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
