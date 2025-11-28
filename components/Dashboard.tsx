@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { UserConfig, DailyContent } from '../types';
 import { generateDailyContent } from '../services/geminiService';
-import { RefreshCw, Heart, Loader2, CloudSun, Sparkles } from 'lucide-react';
+import { RefreshCw, Heart, Loader2, CloudSun, Sparkles, MapPin, PawPrint } from 'lucide-react';
+import DachshundFoodDecider from './DachshundFoodDecider';
+import CatWisdomBook from './CatWisdomBook';
 
 interface DashboardProps {
   config: UserConfig;
@@ -12,16 +14,13 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
   const [loading, setLoading] = useState(true);
   const [imgUrl, setImgUrl] = useState<string>('');
   const [imgLoading, setImgLoading] = useState(true);
-  const [likes, setLikes] = useState<number[]>([]); // Array of timestamps for keys
+  const [likes, setLikes] = useState<number[]>([]);
   
-  // Ref to track mount status to prevent double-fetch in React.StrictMode
   const mountedRef = useRef(false);
 
   const fetchCatImage = useCallback(() => {
     setImgLoading(true);
-    // Add timestamp to bypass cache
     const url = `https://cataas.com/cat?width=800&height=800&t=${Date.now()}`;
-    // Preload image
     const img = new Image();
     img.src = url;
     img.onload = () => {
@@ -33,11 +32,8 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
   const fetchData = useCallback(async (lat?: number, lon?: number) => {
     setLoading(true);
     try {
-      // 1. Fetch text content (Locally generated with real weather if coords provided)
       const dailyData = await generateDailyContent(config, lat && lon ? { lat, lon } : undefined);
       setContent(dailyData);
-      
-      // 2. Fetch Cat Image
       fetchCatImage();
     } catch (error) {
       console.error("Dashboard Load Error", error);
@@ -50,30 +46,22 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
     if (mountedRef.current) return;
     mountedRef.current = true;
 
-    // Request Location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Success
-          fetchData(position.coords.latitude, position.coords.longitude);
-        },
+        (position) => fetchData(position.coords.latitude, position.coords.longitude),
         (error) => {
-          // Error or Denied
-          console.warn("Location permission denied or error:", error);
-          fetchData(); // Fetch without coords (will use fallback)
+          console.warn("Location error:", error);
+          fetchData();
         },
         { timeout: 10000 }
       );
     } else {
-      // Geolocation not supported
       fetchData();
     }
   }, [fetchData]);
 
   const handleDoubleTap = (e: React.MouseEvent) => {
-    // Add a heart animation at click position (simplified to center for now or randomized list)
     setLikes(prev => [...prev, Date.now()]);
-    // Remove the heart after animation (1s)
     setTimeout(() => {
       setLikes(prev => prev.slice(1));
     }, 1000);
@@ -81,11 +69,15 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
 
   if (loading && !content) {
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-cute-pattern text-sky-400">
-        <div className="bg-white/80 p-6 rounded-full shadow-lg mb-4">
-          <Loader2 className="animate-spin text-sky-500" size={48} />
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-cute-pattern text-sky-400 relative overflow-hidden">
+        {/* Animated Clouds Background */}
+        <div className="absolute top-20 left-10 text-sky-100 animate-pulse delay-75"><CloudSun size={60} /></div>
+        <div className="absolute bottom-20 right-10 text-sky-100 animate-pulse delay-300"><CloudSun size={80} /></div>
+        
+        <div className="bg-white/90 backdrop-blur-xl p-8 rounded-full shadow-[0_0_40px_rgba(186,230,253,0.5)] mb-6 animate-bounce">
+          <Loader2 className="animate-spin text-sky-400" size={48} />
         </div>
-        <p className="animate-pulse font-medium text-sky-600 bg-white/60 px-4 py-2 rounded-full">
+        <p className="font-bold text-lg text-sky-500 bg-white/80 px-6 py-3 rounded-2xl shadow-sm tracking-wide">
           Connecting to Cat Planet...
         </p>
       </div>
@@ -93,101 +85,133 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-cute-pattern text-slate-800 flex flex-col p-4 overflow-y-auto relative">
+    <div className="min-h-screen w-full bg-cute-pattern text-slate-800 flex flex-col p-5 overflow-y-auto relative selection:bg-sky-200">
       
-      {/* Background decoration gradient overlay to soften pattern */}
-      <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-sky-100/80 to-transparent -z-0 pointer-events-none" />
+      {/* GLOBAL BACKGROUND DECORATIONS (Floating Paws & Hearts) */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-10 -right-4 text-sky-200 opacity-30 transform rotate-12"><PawPrint size={100} /></div>
+        <div className="absolute top-40 -left-6 text-blue-200 opacity-20 transform -rotate-12"><PawPrint size={80} /></div>
+        <div className="absolute bottom-20 right-4 text-pink-200 opacity-20 transform rotate-45"><Heart size={60} fill="currentColor" /></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/20 to-blue-100/10"></div>
+      </div>
 
-      {/* Top: Weather & Tip */}
-      <section className="flex-none mb-6 z-10 relative mt-2">
-        <div className="bg-white/90 backdrop-blur-md rounded-[2rem] p-5 shadow-lg shadow-sky-100 border border-white flex items-start gap-4 transition-transform hover:scale-[1.01]">
-           <div className="bg-sky-100 p-3 rounded-2xl text-sky-500 shadow-inner">
-              <CloudSun size={32} />
-           </div>
-           <div className="flex-1 pt-1">
-             <div className="flex justify-between items-baseline mb-2">
-               <h2 className="font-bold text-xl text-sky-900 tracking-tight">
-                 {content?.weatherData.city} <span className="text-sky-500">{content?.weatherData.temp}°C</span>
-               </h2>
-               <span className="text-xs text-sky-400 font-bold uppercase tracking-wider bg-sky-50 px-2 py-1 rounded-lg">
-                 {config.nickname}
-               </span>
-             </div>
-             <p className="text-sm text-slate-600 leading-snug font-medium">
-               {content?.weatherTip}
-             </p>
-           </div>
-        </div>
-      </section>
-
-      {/* Middle: Cat Image & Quote (Square Ratio) */}
-      <section className="w-full aspect-square relative mb-6 rounded-[2.5rem] overflow-hidden shadow-xl shadow-sky-200 bg-sky-200 group z-10 shrink-0 border-4 border-white">
-        {/* Refresh Button */}
-        <button 
-          onClick={fetchCatImage}
-          className="absolute top-4 right-4 z-30 p-3 bg-white/40 backdrop-blur-md rounded-full text-white hover:bg-white/60 transition-all active:rotate-180 shadow-sm"
-        >
-          <RefreshCw size={22} />
-        </button>
-
-        {/* Image Container with Double Click Listener */}
-        <div 
-          className="w-full h-full relative cursor-pointer"
-          onDoubleClick={handleDoubleTap}
-        >
-            {imgLoading ? (
-               <div className="w-full h-full flex items-center justify-center bg-sky-100">
-                  <Loader2 className="animate-spin text-sky-400" size={40} />
-               </div>
-            ) : (
-              <img 
-                src={imgUrl} 
-                alt="Daily Cat" 
-                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-              />
-            )}
-            
-            {/* Overlay Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-
-            {/* Quote Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 pb-8 text-white pointer-events-none">
-              <p className="font-serif italic text-xl md:text-2xl leading-relaxed opacity-95 drop-shadow-md text-center">
-                "{content?.quote}"
-              </p>
-            </div>
-
-            {/* Like Animations */}
-            {likes.map((id) => (
-              <div 
-                key={id}
-                className="absolute top-1/2 left-1/2 -ml-8 -mt-8 text-red-400 animate-float-up pointer-events-none z-40 drop-shadow-lg"
-              >
-                <Heart fill="currentColor" size={64} />
+      {/* Top: Weather & Tip Module - Compact & Cute Redesign */}
+      <section className="flex-none mb-5 z-10 relative mt-2 group">
+        <div className="bg-gradient-to-r from-white/90 via-sky-50/95 to-blue-50/90 backdrop-blur-xl rounded-[2rem] p-4 shadow-[0_8px_20px_-6px_rgba(186,230,253,0.8)] border-2 border-white transition-all duration-300 hover:scale-[1.01]">
+           {/* Top Row: Status Bar style */}
+           <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-3">
+                 {/* Compact Icon */}
+                 <div className="bg-sky-100/60 p-2 rounded-2xl text-sky-500 ring-2 ring-white shadow-sm">
+                    <CloudSun size={22} strokeWidth={2.5} />
+                 </div>
+                 
+                 {/* Compact Info */}
+                 <div>
+                    <div className="flex items-baseline gap-1.5">
+                       <span className="text-2xl font-black text-sky-800 tracking-tighter leading-none">{content?.weatherData.temp}°</span>
+                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wide">{content?.weatherData.condition}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-sky-900/50 leading-none mt-0.5">
+                       <MapPin size={10} strokeWidth={3} />
+                       <span className="truncate max-w-[120px]">{content?.weatherData.city}</span>
+                    </div>
+                 </div>
               </div>
-            ))}
+              
+              {/* Nickname Badge */}
+              <div className="bg-sky-300/20 border border-sky-200 text-sky-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm transform -rotate-1">
+                 {config.nickname}
+              </div>
+           </div>
+
+           {/* Bottom Row: Tip Bubble */}
+           <div className="bg-white/60 p-3 rounded-2xl border border-sky-100/50 relative shadow-sm">
+               <div className="flex gap-2 items-center">
+                  <div className="text-lg animate-bounce select-none shrink-0">🐱</div>
+                  <p className="text-xs text-sky-800/90 font-bold leading-tight">
+                    {content?.weatherTip}
+                  </p>
+               </div>
+           </div>
         </div>
       </section>
 
-      {/* Bottom: Horoscope */}
-      <section className="flex-none z-10 mb-4">
-        <div className="bg-gradient-to-br from-sky-500 to-sky-600 text-white rounded-[2rem] p-6 shadow-xl shadow-sky-200 relative overflow-hidden">
-          {/* Decorative Sparkles */}
-          <Sparkles className="absolute top-4 right-4 text-sky-300 opacity-50" size={40} />
+      {/* Middle: Cat Image (Polaroid Style) */}
+      <section className="w-full relative mb-8 z-10 shrink-0">
+        <div className="aspect-square relative rounded-[3rem] bg-white p-3 shadow-[0_20px_40px_-12px_rgba(56,189,248,0.3)] transform rotate-1 hover:rotate-0 transition-transform duration-500 border border-white">
           
-          <div className="flex items-center gap-3 mb-3 opacity-95 relative z-10">
-             <span className="text-xs font-bold bg-white/20 backdrop-blur-sm px-3 py-1 rounded-lg uppercase tracking-wide border border-white/10">
-               {config.zodiac}
-             </span>
-             <span className="text-sm text-sky-100 font-medium">Daily Horoscope</span>
+          <div className="w-full h-full relative rounded-[2.5rem] overflow-hidden bg-sky-100 cursor-pointer group" onDoubleClick={handleDoubleTap}>
+              {/* Refresh Button */}
+              <button 
+                onClick={(e) => { e.stopPropagation(); fetchCatImage(); }}
+                className="absolute top-5 right-5 z-30 p-3 bg-white/30 backdrop-blur-md rounded-full text-white hover:bg-white/50 transition-all active:scale-90 hover:rotate-180 shadow-sm border border-white/20"
+              >
+                <RefreshCw size={24} strokeWidth={2.5} />
+              </button>
+
+              {imgLoading ? (
+                 <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="animate-spin text-sky-300" size={48} />
+                    <span className="text-sky-300 text-sm font-bold">Summoning Cat...</span>
+                 </div>
+              ) : (
+                <img 
+                  src={imgUrl} 
+                  alt="Daily Cat" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+              )}
+              
+              {/* Gradient & Quote */}
+              <div className="absolute inset-0 bg-gradient-to-t from-sky-900/60 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 p-8 text-white pointer-events-none transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                <p className="font-serif italic text-xl md:text-2xl leading-relaxed drop-shadow-md text-center text-white/95">
+                  "{content?.quote}"
+                </p>
+              </div>
+
+              {/* Likes */}
+              {likes.map((id) => (
+                <div key={id} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-rose-400 animate-float-up pointer-events-none z-40 drop-shadow-xl">
+                  <Heart fill="currentColor" size={80} />
+                </div>
+              ))}
           </div>
-          <p className="text-base font-medium leading-relaxed relative z-10 text-sky-50">
-            {content?.horoscope}
-          </p>
         </div>
       </section>
 
-      <div className="h-4"></div> {/* Bottom Spacer */}
+      {/* Feature: The Doxie's Daily Diner */}
+      <DachshundFoodDecider />
+
+      {/* Feature: Cat's Book of Wisdom */}
+      <CatWisdomBook />
+
+      {/* Horoscope Module */}
+      <section className="flex-none mb-8 z-10 relative">
+        <div className="relative overflow-hidden bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 rounded-[2.5rem] p-6 shadow-lg shadow-purple-100/50 border-2 border-white">
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-white rounded-full text-purple-500 shadow-sm">
+                <Sparkles size={20} fill="currentColor" className="text-purple-200" />
+              </div>
+              <h3 className="text-lg font-black text-purple-900 tracking-tight">
+                Star Whispers <span className="text-purple-400 font-medium ml-1 text-base">for {config.zodiac}</span>
+              </h3>
+            </div>
+            
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-5 border border-purple-100">
+               <p className="text-sm text-purple-900/80 leading-relaxed font-medium">
+                 {content?.horoscope}
+               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="h-8 flex justify-center items-center text-sky-300 text-xs font-bold tracking-widest opacity-50 pb-4">
+         MADE WITH LOVE & MEOWS
+      </div>
     </div>
   );
 };

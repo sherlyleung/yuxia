@@ -1,21 +1,6 @@
-export enum ZodiacSign {
-  Aries = "Aries",
-  Taurus = "Taurus",
-  Gemini = "Gemini",
-  Cancer = "Cancer",
-  Leo = "Leo",
-  Virgo = "Virgo",
-  Libra = "Libra",
-  Scorpio = "Scorpio",
-  Sagittarius = "Sagittarius",
-  Capricorn = "Capricorn",
-  Aquarius = "Aquarius",
-  Pisces = "Pisces"
-}
-
 export interface UserConfig {
   nickname: string;
-  zodiac: ZodiacSign;
+  zodiac: string;
 }
 
 export interface WeatherInfo {
@@ -27,6 +12,12 @@ export interface WeatherInfo {
 export interface DailyContent {
   weatherTip: string; // Cat persona tip
   quote: string; // English quote
-  horoscope: string; // Horoscope text
   weatherData: WeatherInfo; // Simulated or retrieved weather data
+  horoscope: string; // Daily horoscope text
+}
+
+export interface FoodOption {
+  suggestion: string;
+  mood_text: string;
+  category: string;
 }

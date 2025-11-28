@@ -38,7 +38,7 @@ const LoveLetterModal: React.FC<LoveLetterModalProps> = ({ config, onOpenDashboa
             onClick={onOpenDashboard}
             className="w-full mt-6 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-sky-200 transition-all transform active:scale-95 text-lg"
           >
-            开启专属提醒
+            开启
           </button>
         </div>
       </div>

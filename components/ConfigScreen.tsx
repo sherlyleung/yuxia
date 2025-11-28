@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { UserConfig, ZodiacSign } from '../types';
+import { UserConfig } from '../types';
+import { Cat, Fish, Sparkles } from 'lucide-react';
 import { ZODIAC_OPTIONS } from '../constants';
-import { Cat, Fish } from 'lucide-react';
 
 interface ConfigScreenProps {
   onComplete: (config: UserConfig) => void;
@@ -9,34 +9,45 @@ interface ConfigScreenProps {
 
 const ConfigScreen: React.FC<ConfigScreenProps> = ({ onComplete }) => {
   const [nickname, setNickname] = useState('');
-  const [zodiac, setZodiac] = useState<ZodiacSign>(ZodiacSign.Aries);
+  const [zodiac, setZodiac] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nickname.trim()) {
-      setError('Please enter your nickname, meow!');
+      setError('Please tell me your name, meow!');
+      return;
+    }
+    if (!zodiac) {
+      setError('Please pick your star sign!');
       return;
     }
     onComplete({ nickname, zodiac });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-cute-pattern text-sky-900">
-      <div className="bg-white/90 backdrop-blur-sm rounded-[2rem] shadow-xl shadow-sky-100 p-8 w-full max-w-md border-2 border-white">
-        <div className="flex justify-center mb-6 text-sky-400 gap-2 items-center">
-          <Fish size={24} className="opacity-60" />
-          <div className="bg-sky-100 p-4 rounded-full">
-            <Cat size={48} className="text-sky-500" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-cute-pattern text-sky-900 relative overflow-hidden">
+      
+      {/* Decorative Circles */}
+      <div className="absolute -top-20 -left-20 w-64 h-64 bg-sky-100 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute top-40 -right-20 w-72 h-72 bg-blue-100 rounded-full blur-3xl opacity-50"></div>
+
+      <div className="bg-white/80 backdrop-blur-xl rounded-[3rem] shadow-[0_20px_60px_-15px_rgba(186,230,253,0.8)] p-8 w-full max-w-md border-4 border-white relative z-10">
+        
+        <div className="flex justify-center mb-6 text-sky-400 gap-4 items-center">
+          <Fish size={24} className="opacity-60 rotate-45" />
+          <div className="bg-gradient-to-tr from-sky-400 to-blue-500 p-5 rounded-[2rem] shadow-lg shadow-sky-200 text-white transform hover:scale-110 transition-transform cursor-pointer">
+            <Cat size={48} strokeWidth={2.5} />
           </div>
-          <Fish size={24} className="opacity-60" />
+          <Sparkles size={24} className="opacity-60 text-yellow-400" />
         </div>
-        <h1 className="text-3xl font-bold text-center mb-2 tracking-tight text-sky-600">Meowing Morning</h1>
-        <p className="text-center text-sky-400 mb-8 text-sm font-medium">Start your day with a purr...</p>
+        
+        <h1 className="text-3xl font-black text-center mb-2 tracking-tight text-sky-800">Meowing Morning</h1>
+        <p className="text-center text-sky-500 mb-10 text-sm font-bold tracking-wide uppercase opacity-80">Design your purrfect day</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold mb-2 pl-2 text-sky-600">What should we call you?</label>
+          <div className="space-y-2">
+            <label className="block text-xs font-black uppercase tracking-wider pl-4 text-sky-400">Nickname</label>
             <input
               type="text"
               value={nickname}
@@ -44,40 +55,46 @@ const ConfigScreen: React.FC<ConfigScreenProps> = ({ onComplete }) => {
                 setNickname(e.target.value);
                 setError('');
               }}
-              placeholder="Enter your nickname"
-              className="w-full px-5 py-4 rounded-2xl bg-sky-50 border-2 border-sky-100 focus:outline-none focus:border-sky-300 focus:bg-white transition-all text-sky-900 placeholder-sky-300 font-medium"
+              placeholder="e.g. Kitten123"
+              className="w-full px-6 py-4 rounded-3xl bg-sky-50/50 border-2 border-sky-100 focus:outline-none focus:border-sky-400 focus:bg-white focus:shadow-lg focus:shadow-sky-100 transition-all text-sky-800 placeholder-sky-300 font-bold text-lg"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-bold mb-2 pl-2 text-sky-600">What is your zodiac sign?</label>
+          <div className="space-y-2">
+            <label className="block text-xs font-black uppercase tracking-wider pl-4 text-sky-400">Zodiac Sign</label>
             <div className="relative">
               <select
                 value={zodiac}
-                onChange={(e) => setZodiac(e.target.value as ZodiacSign)}
-                className="w-full px-5 py-4 rounded-2xl bg-sky-50 border-2 border-sky-100 focus:outline-none focus:border-sky-300 focus:bg-white transition-all text-sky-900 appearance-none font-medium"
+                onChange={(e) => {
+                  setZodiac(e.target.value);
+                  setError('');
+                }}
+                className="w-full px-6 py-4 rounded-3xl bg-sky-50/50 border-2 border-sky-100 focus:outline-none focus:border-sky-400 focus:bg-white focus:shadow-lg focus:shadow-sky-100 transition-all text-sky-800 appearance-none font-bold text-lg cursor-pointer"
               >
+                <option value="" disabled>Choose a sign...</option>
                 {ZODIAC_OPTIONS.map((sign) => (
                   <option key={sign} value={sign}>
                     {sign}
                   </option>
                 ))}
               </select>
-              <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-sky-400">
-                ▼
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-6 text-sky-400">
+                <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
               </div>
             </div>
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm text-center font-medium animate-bounce">{error}</p>
+            <div className="bg-red-50 text-red-400 px-4 py-3 rounded-2xl text-sm text-center font-bold animate-pulse border border-red-100">
+               {error}
+            </div>
           )}
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-sky-200 transition-all transform active:scale-95 text-lg"
+            className="w-full mt-4 bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-black py-4 rounded-3xl shadow-xl shadow-sky-200 transition-all transform hover:scale-[1.02] active:scale-95 text-xl tracking-wide"
           >
-            Start Meow
+            Let's Go! 🐾
           </button>
         </form>
       </div>
