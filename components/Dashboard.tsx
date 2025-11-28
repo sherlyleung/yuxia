@@ -4,6 +4,7 @@ import { generateDailyContent } from '../services/geminiService';
 import { RefreshCw, Heart, Loader2, CloudSun, Sparkles, MapPin, PawPrint } from 'lucide-react';
 import DachshundFoodDecider from './DachshundFoodDecider';
 import CatWisdomBook from './CatWisdomBook';
+import LocationPermissionModal from './LocationPermissionModal';
 
 interface DashboardProps {
   config: UserConfig;
@@ -15,6 +16,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
   const [imgUrl, setImgUrl] = useState<string>('');
   const [imgLoading, setImgLoading] = useState(true);
   const [likes, setLikes] = useState<number[]>([]);
+  const [showLocationModal, setShowLocationModal] = useState(true);
   
   const mountedRef = useRef(false);
 
@@ -29,6 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
     };
   }, []);
 
+  // Main data fetch function
   const fetchData = useCallback(async (lat?: number, lon?: number) => {
     setLoading(true);
     try {
@@ -42,23 +45,33 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
     }
   }, [config, fetchCatImage]);
 
-  useEffect(() => {
-    if (mountedRef.current) return;
-    mountedRef.current = true;
+  // Handle Location Permission: Allow
+  const handleAllowLocation = () => {
+    setShowLocationModal(false);
+    // Keep loading state true while browser asks for permission
+    setLoading(true); 
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => fetchData(position.coords.latitude, position.coords.longitude),
+        (position) => {
+          fetchData(position.coords.latitude, position.coords.longitude);
+        },
         (error) => {
-          console.warn("Location error:", error);
-          fetchData();
+          console.warn("Location permission denied or error:", error);
+          fetchData(); // Fallback to default/random data
         },
         { timeout: 10000 }
       );
     } else {
-      fetchData();
+      fetchData(); // Browser doesn't support, fallback
     }
-  }, [fetchData]);
+  };
+
+  // Handle Location Permission: Skip
+  const handleSkipLocation = () => {
+    setShowLocationModal(false);
+    fetchData(); // Load with default/random data
+  };
 
   const handleDoubleTap = (e: React.MouseEvent) => {
     setLikes(prev => [...prev, Date.now()]);
@@ -66,6 +79,18 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
       setLikes(prev => prev.slice(1));
     }, 1000);
   };
+
+  // If showing location modal, we can show it over a simple background or the loading state
+  // Here we return the modal immediately if active
+  if (showLocationModal) {
+    return (
+      <div className="min-h-screen w-full bg-cute-pattern relative">
+        {/* Background elements to keep context */}
+        <div className="absolute top-20 left-10 text-sky-200/50"><CloudSun size={60} /></div>
+        <LocationPermissionModal onAllow={handleAllowLocation} onSkip={handleSkipLocation} />
+      </div>
+    );
+  }
 
   if (loading && !content) {
     return (
