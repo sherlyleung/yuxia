@@ -35,7 +35,13 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
   const fetchData = useCallback(async (lat?: number, lon?: number) => {
     setLoading(true);
     try {
-      const dailyData = await generateDailyContent(config, lat && lon ? { lat, lon } : undefined);
+      // Check explicitly for number type to handle 0 coordinates correctly
+      const hasCoords = typeof lat === 'number' && typeof lon === 'number';
+      const dailyData = await generateDailyContent(
+        config, 
+        hasCoords ? { lat: lat!, lon: lon! } : undefined
+      );
+      
       setContent(dailyData);
       fetchCatImage();
     } catch (error) {
@@ -54,15 +60,17 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log("Location granted:", position.coords);
           fetchData(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
           console.warn("Location permission denied or error:", error);
           fetchData(); // Fallback to default/random data
         },
-        { timeout: 10000 }
+        { timeout: 10000, maximumAge: 60000 }
       );
     } else {
+      console.warn("Geolocation not supported");
       fetchData(); // Browser doesn't support, fallback
     }
   };
@@ -80,11 +88,13 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
     }, 1000);
   };
 
-  // If showing location modal, we can show it over a simple background or the loading state
-  // Here we return the modal immediately if active
+  // Removed useEffect auto-fetch. 
+  // We now wait for the user to interact with the Location Modal.
+
+  // If showing location modal, return it immediately (blocking other views)
   if (showLocationModal) {
     return (
-      <div className="min-h-screen w-full bg-cute-pattern relative">
+      <div className="min-h-screen w-full bg-cute-pattern relative flex items-center justify-center">
         {/* Background elements to keep context */}
         <div className="absolute top-20 left-10 text-sky-200/50"><CloudSun size={60} /></div>
         <LocationPermissionModal onAllow={handleAllowLocation} onSkip={handleSkipLocation} />
