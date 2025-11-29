@@ -4,6 +4,7 @@ import { generateDailyContent } from '../services/geminiService';
 import { RefreshCw, Heart, Loader2, CloudSun, Sparkles, MapPin, PawPrint } from 'lucide-react';
 import DachshundFoodDecider from './DachshundFoodDecider';
 import CatWisdomBook from './CatWisdomBook';
+import Phonograph from './Phonograph';
 import LocationPermissionModal from './LocationPermissionModal';
 
 interface DashboardProps {
@@ -195,11 +196,6 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
                     </div>
                  </div>
               </div>
-              
-              {/* Nickname Badge */}
-              <div className="bg-sky-300/20 border border-sky-200 text-sky-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm transform -rotate-1 shrink-0 ml-2">
-                 {config.nickname}
-              </div>
            </div>
 
            {/* Bottom Row: Tip Bubble */}
@@ -263,6 +259,9 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
 
       {/* Feature: Cat's Book of Wisdom */}
       <CatWisdomBook />
+
+      {/* Feature: Phonograph (Love Recorder) */}
+      <Phonograph />
 
       {/* Horoscope Module */}
       <section className="flex-none mb-8 z-10 relative">
