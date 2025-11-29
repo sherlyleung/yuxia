@@ -80,29 +80,12 @@ const Phonograph: React.FC = () => {
 
     const pathsToTry = [directRawUrl, userProvidedUrl, `audio/${fileName}`];
     
-    // If we are NOT trying to play 'late_1.mp3' specifically, we set it as a safe fallback
-    // This solves the issue if you haven't uploaded 'morning' or 'afternoon' files yet.
-    const safeFallback = fileName !== 'late_1.mp3' ? 'late_1.mp3' : null;
-
-    attemptPlay(pathsToTry, 0, safeFallback);
+    attemptPlay(pathsToTry);
   };
 
-  const attemptPlay = (paths: string[], index = 0, fallbackFilename: string | null = null) => {
+  const attemptPlay = (paths: string[], index = 0) => {
     // 1. Check if we have exhausted all options
     if (index >= paths.length) {
-      // IF FAILED: Try the fallback file (late_1.mp3) if defined
-      if (fallbackFilename) {
-        console.warn(`[Phonograph] Original file missing, falling back to ${fallbackFilename}`);
-        setStatusText("Playing default (late_1)...");
-        
-        const fallbackUrl1 = `https://raw.githubusercontent.com/sherlyleung/audio/refs/heads/main/${fallbackFilename}`;
-        const fallbackUrl2 = `https://github.com/sherlyleung/audio/raw/refs/heads/main/${fallbackFilename}`;
-        
-        // Call recursively with NO fallback to avoid infinite loops
-        attemptPlay([fallbackUrl1, fallbackUrl2], 0, null);
-        return;
-      }
-
       console.error("[Phonograph] All paths failed. Files likely missing.");
       setStatusText('Audio Missing 😿');
       setIsPlaying(false);
@@ -138,7 +121,7 @@ const Phonograph: React.FC = () => {
       // Only retry if this audio instance is STILL the active one.
       if (audioRef.current === audio) {
          console.warn(`[Phonograph] Failed ${currentPath} (${reason}), trying next...`);
-         attemptPlay(paths, index + 1, fallbackFilename);
+         attemptPlay(paths, index + 1);
       }
     };
 
