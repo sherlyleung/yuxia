@@ -7,6 +7,8 @@ export interface WeatherInfo {
   temp: number;
   condition: string; // e.g., "Sunny", "Cloudy"
   city: string;
+  uvIndex?: number;
+  aqi?: number;
 }
 
 export interface DailyContent {

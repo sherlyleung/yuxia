@@ -10,6 +10,24 @@ interface DashboardProps {
   config: UserConfig;
 }
 
+// Helpers for Weather Status formatting - Soft Gradients & Rounded Theme
+const getUvStatus = (uv: number) => {
+  if (uv <= 2) return { label: 'Low', className: 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-100' };
+  if (uv <= 5) return { label: 'Moderate', className: 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-amber-100' };
+  if (uv <= 7) return { label: 'High', className: 'bg-gradient-to-r from-orange-50 to-red-50 text-orange-700 border-orange-100' };
+  if (uv <= 10) return { label: 'Very High', className: 'bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 border-rose-100' };
+  return { label: 'Extreme', className: 'bg-gradient-to-r from-purple-50 to-fuchsia-50 text-purple-700 border-purple-100' };
+};
+
+const getAqiStatus = (aqi: number) => {
+  if (aqi <= 50) return { label: 'Good', className: 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-100' };
+  if (aqi <= 100) return { label: 'Moderate', className: 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-amber-100' };
+  if (aqi <= 150) return { label: 'Sensitive', className: 'bg-gradient-to-r from-orange-50 to-red-50 text-orange-700 border-orange-100' };
+  if (aqi <= 200) return { label: 'Unhealthy', className: 'bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 border-rose-100' };
+  if (aqi <= 300) return { label: 'Very Poor', className: 'bg-gradient-to-r from-purple-50 to-fuchsia-50 text-purple-700 border-purple-100' };
+  return { label: 'Hazardous', className: 'bg-gradient-to-r from-slate-100 to-gray-200 text-slate-700 border-slate-200' };
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ config }) => {
   const [content, setContent] = useState<DailyContent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,6 +137,10 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
     );
   }
 
+  // Pre-calculate status for UI
+  const uvStatus = content?.weatherData.uvIndex !== undefined ? getUvStatus(content.weatherData.uvIndex) : null;
+  const aqiStatus = content?.weatherData.aqi !== undefined ? getAqiStatus(content.weatherData.aqi) : null;
+
   return (
     <div className="min-h-screen w-full bg-cute-pattern text-slate-800 flex flex-col p-5 overflow-y-auto relative selection:bg-sky-200">
       
@@ -134,28 +156,48 @@ const Dashboard: React.FC<DashboardProps> = ({ config }) => {
       <section className="flex-none mb-5 z-10 relative mt-2 group">
         <div className="bg-gradient-to-r from-white/90 via-sky-50/95 to-blue-50/90 backdrop-blur-xl rounded-[2rem] p-4 shadow-[0_8px_20px_-6px_rgba(186,230,253,0.8)] border-2 border-white transition-all duration-300 hover:scale-[1.01]">
            {/* Top Row: Status Bar style */}
-           <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-3">
+           <div className="flex justify-between items-start mb-3">
+              <div className="flex items-start gap-3 w-full">
                  {/* Compact Icon */}
-                 <div className="bg-sky-100/60 p-2 rounded-2xl text-sky-500 ring-2 ring-white shadow-sm">
+                 <div className="bg-sky-100/60 p-2 rounded-2xl text-sky-500 ring-2 ring-white shadow-sm mt-1 shrink-0">
                     <CloudSun size={22} strokeWidth={2.5} />
                  </div>
                  
                  {/* Compact Info */}
-                 <div>
+                 <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5">
-                       <span className="text-2xl font-black text-sky-800 tracking-tighter leading-none">{content?.weatherData.temp}°</span>
-                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wide">{content?.weatherData.condition}</span>
+                       <span className="text-3xl font-black text-sky-800 tracking-tighter leading-none">{content?.weatherData.temp}°</span>
+                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wide truncate">{content?.weatherData.condition}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-bold text-sky-900/50 leading-none mt-0.5">
-                       <MapPin size={10} strokeWidth={3} />
-                       <span className="truncate max-w-[120px]">{content?.weatherData.city}</span>
+                    
+                    <div className="flex flex-col gap-2 mt-1.5">
+                       <div className="flex items-center gap-1 text-[11px] font-bold text-sky-900/50 leading-none">
+                          <MapPin size={10} strokeWidth={3} />
+                          <span className="truncate max-w-[140px]">{content?.weatherData.city}</span>
+                       </div>
+                       
+                       {/* UV & AQI Badges - Force Row Layout (no wrap) for side-by-side */}
+                       <div className="flex flex-row flex-nowrap gap-2 overflow-hidden items-center">
+                          {uvStatus && (
+                            <div className={`px-2 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1.5 shadow-sm whitespace-nowrap ${uvStatus.className}`}>
+                              <span>UV {content?.weatherData.uvIndex}</span>
+                              <span className="uppercase opacity-75 text-[9px] border-l border-current/20 pl-1.5 leading-none">{uvStatus.label}</span>
+                            </div>
+                          )}
+                          
+                          {aqiStatus && (
+                            <div className={`px-2 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1.5 shadow-sm whitespace-nowrap ${aqiStatus.className}`}>
+                              <span>AQI {content?.weatherData.aqi}</span>
+                              <span className="uppercase opacity-75 text-[9px] border-l border-current/20 pl-1.5 leading-none">{aqiStatus.label}</span>
+                            </div>
+                          )}
+                       </div>
                     </div>
                  </div>
               </div>
               
               {/* Nickname Badge */}
-              <div className="bg-sky-300/20 border border-sky-200 text-sky-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm transform -rotate-1">
+              <div className="bg-sky-300/20 border border-sky-200 text-sky-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm transform -rotate-1 shrink-0 ml-2">
                  {config.nickname}
               </div>
            </div>

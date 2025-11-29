@@ -15,55 +15,76 @@ const mapWmoCodeToCondition = (code: number): string => {
   return "Clear"; // Default
 };
 
-// Weather Tips (Cat Persona - Translated)
-const TIPS: Record<string, string[]> = {
+// --- CAT PERSONA TIPS (English) ---
+
+const WEATHER_TIPS: Record<string, string[]> = {
   "Clear": [
-    "Sun is shining, come sunbathe with me!",
-    "Full of energy today, shining like the sun!",
-    "A bit hot, remember to drink water, don't turn into a roasted bean!",
-    "Great weather, let your mood fly high!"
+    "Sunbeams everywhere! Perfect time for a nap on the windowsill. ☀️",
+    "The sky is blue like a bird's egg. Let's watch birds through the glass! 🐦",
+    "It's bright outside! Don't forget your sunglasses, cool cat. 😎",
+    "A purr-fect day to chase shadows in the garden. 🐾",
+    "Soak up the sun, but don't forget to hydrate! 💧"
   ],
   "Clouds": [
-    "Grey skies are perfect for a cat nap.",
-    "Don't let the clouds fool you, bring an umbrella just in case.",
-    "Not too hot, let's sneak out to play!",
-    "Cuddle day, come let me hug you."
+    "The sky is fluffy like my belly. Good napping weather. ☁️",
+    "No sunbeams to chase, but plenty of clouds to count.",
+    "It's a grey day, let's make our own sunshine with cuddles! ❤️",
+    "Soft light outside—I look even more beautiful in photos today. 📸"
   ],
   "Rain": [
-    "Slippery roads, don't let my dried fish get wet!",
-    "Rain sounds are cozy, let's watch a movie at home.",
-    "Walk lightly like a cat on this wet floor.",
-    "It's raining, remember to turn up the heat a little."
+    "Water falling from the sky? Yuck! Perfect excuse to stay in bed. ☔",
+    "Raindrops on the roof... the best lullaby for a cat nap. 💤",
+    "Don't get your fur wet! Take an umbrella if you must leave me. ☂️",
+    "Let's stay inside and watch the world get washed clean. 🏠"
   ],
   "Drizzle": [
-    "Misty rain, an umbrella makes it romantic.",
-    "Careful not to wet your shoes, squishy is uncomfortable!",
-    "Gentle rain, don't forget your raincoat.",
-    "It's drizzling, wear an extra layer before going out."
+    "Just a little sprinkle. A raincoat would look cute on you! 🧥",
+    "Misty and mysterious... keep your paws dry!",
+    "It's drizzling! Don't slip on the wet pavement. 🐾"
   ],
   "Snow": [
-    "Wow! It's snowing outside, hold me tight!",
-    "Super cold today, wear extra layers meow.",
-    "Want to step in the snow? Paws might get freezing.",
-    "Slippery ground, walk slowly, slowly, slowly!"
+    "The world is white and cold! My paws prefer the warm rug. ❄️",
+    "It's freezing! Wrap up like a burrito before you go out. 🧣",
+    "Snowflakes are dancing! Watch them from the warm window. 🏠",
+    "If you go out, walk carefully! Don't slide like a penguin. 🐧"
   ],
   "Thunderstorm": [
-    "Thunder! Come comfort me!",
-    "Stormy wind and rain, it's safest to stay home.",
-    "Close the windows tight, keep the rain out.",
-    "Sudden heavy rain, absolutely do not go out today!"
+    "Boom! That was loud! I'm hiding under the bed, come protect me! ⚡",
+    "Stormy weather means extra treats are required for bravery. 🐟",
+    "Stay inside! It's too wild for a civilized cat out there. 🚫"
   ],
   "Mist": [
-    "The air is a bit thick, wear a mask to protect your nose.",
-    "Foggy outside, watch your step carefully.",
-    "It's grey out there, let's stay in the room.",
-    "Breathe gently, keep the dust out."
+    "It's foggy! I can't see the birds... spooky. 🌫️",
+    "Visibility is low, keep your eyes peeled (like mine at 3AM). 👀",
+    "A mysterious day. Perfect for reading a book indoors. 📖"
+  ]
+};
+
+// UV Specific Tips (Triggered when UV is high)
+const UV_TIPS = {
+  high: [
+    "The sun is biting today! Put on your sunscreen, human. 🧴",
+    "It's getting hot! Stay in the shade like a smart kitty. 🌳",
+    "UV alert! Protect your skin, I need you healthy to open cans. 🥫"
   ],
-  "Squall": [
-    "Woo woo, dangerous outside, hide!",
-    "Big wind! Absolutely do not go out today!",
-    "Waiting for you to come home safe, be careful.",
-    "Put away things outside that might blow away."
+  extreme: [
+    "Whoa, the sun is angry! Stay inside and pet me instead. 🏠",
+    "Dangerously bright! Don't go out unless you wrap up tight. 🔥",
+    "The floor is lava... I mean, the outside is a toaster! Avoid the sun! ☀️"
+  ]
+};
+
+// AQI Specific Tips (Triggered when Air Quality is bad)
+const AQI_TIPS = {
+  poor: [
+    "Sniff... the air smells funny. Maybe skip the long run? 🏃‍♀️",
+    "It's a bit dusty out there. Let's play indoors today. 😷",
+    "Air quality isn't great. Keep those windows closed! 🪟"
+  ],
+  hazardous: [
+    "Yuck! The air is thick. Stay inside with the air purifier! 💨",
+    "Hazardous air! Perfect excuse to cancel plans and cuddle. ❤️",
+    "Don't go out there! It's not fit for man nor beast. 🛑"
   ]
 };
 
@@ -102,7 +123,6 @@ const LOVE_QUOTES = [
 ];
 
 // Simulated DB: Food Options
-// Categories: Chinese, International, Sydney, General
 const FOOD_OPTIONS: FoodOption[] = [
   // --- Chinese Food ---
   { suggestion: "Lanzhou Hand-Pulled Beef Noodles (Clear Broth)", mood_text: "Long noodles for a long dog like me! The broth is warm and soothing.", category: "Chinese" },
@@ -225,28 +245,47 @@ export const generateDailyContent = async (
   let temp = 22;
   let condition = "Clear";
   let city = "Cat City";
+  let uvIndex = 0;
+  let aqi = 0;
 
   // If coordinates are provided, fetch real data
   if (coords) {
     try {
-      // 1. Fetch Weather from Open-Meteo (Free, no key)
-      const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current_weather=true`
-      );
+      // 1. Fetch Weather (Temp + Daily Max UV) & AQI in parallel
+      const [weatherRes, aqiRes] = await Promise.all([
+        fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current_weather=true&daily=uv_index_max&timezone=auto`
+        ),
+        fetch(
+          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${coords.lat}&longitude=${coords.lon}&current=us_aqi`
+        )
+      ]);
+
       const weatherData = await weatherRes.json();
+      const aqiData = await aqiRes.json();
       
+      // Parse Weather
       if (weatherData.current_weather) {
         temp = Math.round(weatherData.current_weather.temperature);
         condition = mapWmoCodeToCondition(weatherData.current_weather.weathercode);
       }
+      
+      // Parse UV (Daily Max)
+      if (weatherData.daily && weatherData.daily.uv_index_max && weatherData.daily.uv_index_max.length > 0) {
+        uvIndex = Math.round(weatherData.daily.uv_index_max[0]);
+      }
 
-      // 2. Fetch City Name from Nominatim (OpenStreetMap)
+      // Parse AQI
+      if (aqiData.current && typeof aqiData.current.us_aqi === 'number') {
+        aqi = aqiData.current.us_aqi;
+      }
+
+      // 2. Fetch City Name from Nominatim
       const cityRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lon}&zoom=10`
       );
       const cityData = await cityRes.json();
       
-      // Try to find the best name
       city = cityData.address?.city || 
              cityData.address?.town || 
              cityData.address?.village || 
@@ -255,30 +294,50 @@ export const generateDailyContent = async (
 
     } catch (error) {
       console.warn("Failed to fetch real weather/location:", error);
-      // Fallback values are already set above
     }
   } else {
-    // Fallback simulation if no coords provided (e.g. permission denied)
+    // Fallback simulation
     const conditions = ["Clear", "Clouds", "Rain"];
     condition = conditions[Math.floor(Math.random() * conditions.length)];
     temp = Math.floor(Math.random() * (28 - 15) + 15);
+    uvIndex = Math.floor(Math.random() * 11);
+    aqi = Math.floor(Math.random() * 100);
   }
 
   // Select Quote
   const quote = LOVE_QUOTES[Math.floor(Math.random() * LOVE_QUOTES.length)];
 
-  // Select Tip based on Condition
-  const specificTips = TIPS[condition] || TIPS["Clear"];
-  const weatherTip = specificTips[Math.floor(Math.random() * specificTips.length)];
-
-  // --------------------------------------------------------------------------
-  // Horoscope Logic (Restored)
-  // --------------------------------------------------------------------------
-  let horoscope = "The crystal ball is cloudy today...";
+  // --- Select Tip with Priority Logic ---
+  let selectedTip = "";
   
+  // Helper to pick random from array
+  const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+  // Priority 1: Hazardous/Poor Air Quality
+  if (aqi > 150) {
+    selectedTip = pick(AQI_TIPS.hazardous);
+  } 
+  // Priority 2: Extreme/High UV
+  else if (uvIndex >= 8) {
+    selectedTip = pick(UV_TIPS.extreme);
+  } 
+  // Priority 3: Poor Air (Moderate-Poor)
+  else if (aqi > 100) {
+    selectedTip = pick(AQI_TIPS.poor);
+  }
+  // Priority 4: High UV (6-7)
+  else if (uvIndex >= 6) {
+    selectedTip = pick(UV_TIPS.high);
+  }
+  // Priority 5: Standard Weather Condition
+  else {
+    const specificTips = WEATHER_TIPS[condition] || WEATHER_TIPS["Clear"];
+    selectedTip = pick(specificTips);
+  }
+
+  // Horoscope
+  let horoscope = "The crystal ball is cloudy today...";
   if (userConfig.zodiac) {
-    // Kept the fix: Do NOT convert to lowercase for better API compatibility in some cases,
-    // and ensure 'day' is 'today' (lowercase).
     const signParam = userConfig.zodiac; 
     const apiUrl = `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${signParam}&day=today`;
 
@@ -288,46 +347,39 @@ export const generateDailyContent = async (
         throw new Error(`API response not ok: ${response.status}`);
       }
       const data = await response.json();
-      
-      // The Vercel API usually returns structure: { data: { date: "...", horoscope_data: "..." }, ... }
       if (data.data && data.data.horoscope_data) {
         horoscope = data.data.horoscope_data;
-      } else {
-        console.warn("Unexpected horoscope API structure:", data);
-        throw new Error("Invalid API response structure");
       }
     } catch (error) {
       console.warn("Failed to fetch horoscope:", error);
-      horoscope = "The fortune-telling cat is on a mouse-catching mission right now, so my crystal ball has no signal!"; // Fallback: Cat fortune teller is away.
+      horoscope = "The fortune-telling cat is chasing a laser pointer, please try again later! 🐱✨"; 
     }
   }
 
   return {
-    weatherTip,
+    weatherTip: selectedTip,
     quote,
     horoscope,
     weatherData: {
       temp,
       condition,
-      city
+      city,
+      uvIndex,
+      aqi
     }
   };
 };
 
 // Simulated Cloud Function: get_food_suggestion
 export const getFoodSuggestion = async (): Promise<FoodOption> => {
-  // Simulate network delay for realistic "cloud function" feel
   await new Promise(resolve => setTimeout(resolve, 600)); 
-  
   const randomIndex = Math.floor(Math.random() * FOOD_OPTIONS.length);
   return FOOD_OPTIONS[randomIndex];
 };
 
 // Simulated Cloud Function: get_wisdom_answer
 export const getWisdomAnswer = async (): Promise<string> => {
-  // Simulate network delay and mystery calculation
   await new Promise(resolve => setTimeout(resolve, 800));
-  
   const randomIndex = Math.floor(Math.random() * WISDOM_ANSWERS.length);
   return WISDOM_ANSWERS[randomIndex];
 };
