@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Heart, Sparkles, Music, PauseCircle } from 'lucide-react';
 
+const TOTAL_LOVE_TRACKS = 30;
+
 const Phonograph: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeBtn, setActiveBtn] = useState<string | null>(null);
@@ -70,29 +72,75 @@ const Phonograph: React.FC = () => {
 
     setStatusText(`Playing: ${displayLabels[category] || category}...`);
     
-    // STRATEGY: 
-    // 1. Direct Raw Link (raw.githubusercontent.com) - Most stable for audio tags
-    // 2. User provided link format (github.com/.../raw/...) - Follows redirects
-    // 3. Local fallback (just in case)
-    
     const directRawUrl = `https://raw.githubusercontent.com/sherlyleung/audio/refs/heads/main/${fileName}`;
     const userProvidedUrl = `https://github.com/sherlyleung/audio/raw/refs/heads/main/${fileName}`;
-
     const pathsToTry = [directRawUrl, userProvidedUrl, `audio/${fileName}`];
     
     attemptPlay(pathsToTry);
   };
 
-  const attemptPlay = (paths: string[], index = 0) => {
-    // 1. Check if we have exhausted all options
-    if (index >= paths.length) {
-      console.error("[Phonograph] All paths failed. Files likely missing.");
-      setStatusText('Audio Missing 😿');
-      setIsPlaying(false);
-      setTimeout(() => {
+  // New logic for Love Button
+  const playRandomLoveMessage = (triedTracks: number[] = []) => {
+    // If we've tried all 30 tracks and all failed, give up
+    if (triedTracks.length >= TOTAL_LOVE_TRACKS) {
+        console.error("[Phonograph] All love tracks failed.");
+        setStatusText('Love signal lost 😿');
+        setIsPlaying(false);
         setActiveBtn(null);
-        setStatusText('');
-      }, 3000);
+        return;
+    }
+
+    // Pick a random number between 1 and 30 that hasn't been tried yet
+    let trackId;
+    do {
+        trackId = Math.floor(Math.random() * TOTAL_LOVE_TRACKS) + 1;
+    } while (triedTracks.includes(trackId));
+
+    const fileName = `love_${trackId}.mp3`;
+    setStatusText(`Sending Love (${trackId})... ❤️`);
+
+    const directRawUrl = `https://raw.githubusercontent.com/sherlyleung/audio/refs/heads/main/${fileName}`;
+    const userProvidedUrl = `https://github.com/sherlyleung/audio/raw/refs/heads/main/${fileName}`;
+    const pathsToTry = [directRawUrl, userProvidedUrl, `audio/${fileName}`];
+
+    // Define what happens if THIS specific track ID fails all path variations
+    const onThisTrackFailed = () => {
+        console.warn(`[Phonograph] Love track ${trackId} failed, trying another...`);
+        // Recursive call with the current track added to the "tried" list
+        playRandomLoveMessage([...triedTracks, trackId]);
+    };
+
+    attemptPlay(pathsToTry, 0, onThisTrackFailed);
+  };
+
+  // Logic for Kiss Button
+  const playKissMessage = () => {
+    const fileName = 'kiss_1.mp3';
+    setStatusText('Chu! 💋 Sending Kiss...');
+
+    const directRawUrl = `https://raw.githubusercontent.com/sherlyleung/audio/refs/heads/main/${fileName}`;
+    const userProvidedUrl = `https://github.com/sherlyleung/audio/raw/refs/heads/main/${fileName}`;
+    const pathsToTry = [directRawUrl, userProvidedUrl, `audio/${fileName}`];
+    
+    attemptPlay(pathsToTry);
+  };
+
+  const attemptPlay = (paths: string[], index = 0, onFailure?: () => void) => {
+    // 1. Check if we have exhausted all options for this specific file
+    if (index >= paths.length) {
+      if (onFailure) {
+        // If a failure callback allows retrying with a DIFFERENT file ID
+        onFailure();
+      } else {
+        // Default error behavior (end of the line)
+        console.error("[Phonograph] All paths failed. Files likely missing.");
+        setStatusText('Audio Missing 😿');
+        setIsPlaying(false);
+        setTimeout(() => {
+          setActiveBtn(null);
+          setStatusText('');
+        }, 3000);
+      }
       return;
     }
 
@@ -120,8 +168,8 @@ const Phonograph: React.FC = () => {
 
       // Only retry if this audio instance is STILL the active one.
       if (audioRef.current === audio) {
-         console.warn(`[Phonograph] Failed ${currentPath} (${reason}), trying next...`);
-         attemptPlay(paths, index + 1);
+         console.warn(`[Phonograph] Failed ${currentPath} (${reason}), trying next path variation...`);
+         attemptPlay(paths, index + 1, onFailure);
       }
     };
 
@@ -171,18 +219,14 @@ const Phonograph: React.FC = () => {
     
     if (action === 'message') {
       playRandomMessage();
-    } else {
-      // Logic for Love and Kiss
+    } else if (action === 'love') {
+      // New logic for Love button
+      setIsPlaying(true); // Set playing immediately to prevent double clicks
+      playRandomLoveMessage();
+    } else if (action === 'kiss') {
+      // Logic for Kiss button
       setIsPlaying(true);
-      
-      if (action === 'love') setStatusText('Sending Love Signal... ❤️');
-      if (action === 'kiss') setStatusText('Chu! 💋 Sending Kiss...');
-
-      setTimeout(() => {
-        setIsPlaying(false);
-        setActiveBtn(null);
-        setStatusText('');
-      }, 2500);
+      playKissMessage();
     }
   };
 
